@@ -20,12 +20,24 @@ void test_write()
 	std::cout << bws.get_able_len() << "," << bws.get_len() << std::endl;
 }
 
-int main()
-{
+int main(int argc, char** args) {
+    if (argc < 2) {
+        std::cout << "please input file" << std::endl;
+        return 0;
+    }
+    char* input_file = args[1];
+    char* out_video = NULL;
+    char* out_audio = NULL;
+    if (argc == 3) {
+    	out_video = args[2];
+    } else if(argc == 4) {
+		out_video = args[2];
+		out_audio = args[3];
+    }
 	test_read();
     std::cout << "hello world" << std::endl;
 	test_write();
-	FlvParser parser("/home/skl/pcode/video/dp.flv", "/home/skl/pcode/video/dp.h264", "/home/skl/pcode/video/dp.aac");
+	FlvParser parser(input_file, out_video, out_audio);
 	while(1)
 	{
 		if(parser.read_next_tag() == false)

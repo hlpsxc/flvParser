@@ -9,7 +9,10 @@ static char H264_START_CODE[] = {0x00, 0x00, 0x00, 0x01};
 #define H264_START_CODE_LENGTH 4
 
 FlvParser::FlvParser(const char *file_name)
-        : _file_name(file_name), _is_flv(false)
+: _file_name(file_name)
+, _is_flv(false)
+, _out_audio_file(NULL)
+, _out_video_file(NULL)
 {
     _file = fopen(_file_name.c_str(), "rb");
     if (_file == NULL) {
@@ -23,8 +26,10 @@ FlvParser::FlvParser(const char *file_name)
 }
 
 FlvParser::FlvParser(const char *file_name, const char *out_video_file_name, const char *out_audio_file_name)
-        : _file_name(file_name), _is_flv(false), _out_video_file_name(out_video_file_name),
-          _out_audio_file_name(out_audio_file_name)
+: _file_name(file_name)
+, _is_flv(false)
+, _out_video_file_name(out_video_file_name)
+,_out_audio_file_name(out_audio_file_name)
 {
     _file = fopen(_file_name.c_str(), "rb");
     if (_file == NULL) {
@@ -155,10 +160,10 @@ bool FlvParser::read_next_tag()
 bool FlvParser::read_video_tag(TagHeader header, uint8_t *data, int len)
 {
     uint8_t codec_type = data[0] & 0x0f;
-    uint8_t frame_type = data[0] & 0xf0;
+    uint8_t frame_type = (data[0] & 0xf0) >> 4;
 
     if (FLV_VIDEO_CODEC_H264 != codec_type && FLV_VIDEO_CODEC_HEVE != codec_type) {
-        std::cout << "no support video codec,id:" << codec_type << std::endl;
+        std::cout << "no support video codec,id:" << (int)codec_type << std::endl;
         return true;
     }
 
