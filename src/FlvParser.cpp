@@ -9,11 +9,7 @@ static char H264_START_CODE[] = {0x00, 0x00, 0x00, 0x01};
 #define H264_START_CODE_LENGTH 4
 
 FlvParser::FlvParser(const char *file_name)
-: _file_name(file_name)
-, _is_flv(false)
-, _out_audio_file(NULL)
-, _out_video_file(NULL)
-{
+        : _file_name(file_name), _is_flv(false), _out_audio_file(NULL), _out_video_file(NULL) {
     _file = fopen(_file_name.c_str(), "rb");
     if (_file == NULL) {
         std::cout << "file open faild, filename:" << _file_name << ", err:" << errno << std::endl;
@@ -26,11 +22,8 @@ FlvParser::FlvParser(const char *file_name)
 }
 
 FlvParser::FlvParser(const char *file_name, const char *out_video_file_name, const char *out_audio_file_name)
-: _file_name(file_name)
-, _is_flv(false)
-, _out_video_file_name(out_video_file_name)
-,_out_audio_file_name(out_audio_file_name)
-{
+        : _file_name(file_name), _is_flv(false), _out_video_file_name(out_video_file_name),
+          _out_audio_file_name(out_audio_file_name) {
     _file = fopen(_file_name.c_str(), "rb");
     if (_file == NULL) {
         std::cout << "file open faild, filename:" << _file_name << ", err:" << errno << std::endl;
@@ -59,8 +52,7 @@ FlvParser::FlvParser(const char *file_name, const char *out_video_file_name, con
     }
 }
 
-FlvParser::~FlvParser()
-{
+FlvParser::~FlvParser() {
     if (_file) {
         fclose(_file);
         _file = NULL;
@@ -75,8 +67,7 @@ FlvParser::~FlvParser()
     }
 }
 
-bool FlvParser::read_header()
-{
+bool FlvParser::read_header() {
     char header[10];
     int ret = fread(header, 1, FLV_HEADER_DEFAULT_SIZE, _file);
     if (ret < 9) {
@@ -104,8 +95,7 @@ bool FlvParser::read_header()
     return true;
 }
 
-bool FlvParser::read_next_tag()
-{
+bool FlvParser::read_next_tag() {
     assert(_is_flv == true);
 
     uint8_t data[12];
@@ -157,13 +147,12 @@ bool FlvParser::read_next_tag()
     return true;
 }
 
-bool FlvParser::read_video_tag(TagHeader header, uint8_t *data, int len)
-{
+bool FlvParser::read_video_tag(TagHeader header, uint8_t *data, int len) {
     uint8_t codec_type = data[0] & 0x0f;
     uint8_t frame_type = (data[0] & 0xf0) >> 4;
 
     if (FLV_VIDEO_CODEC_H264 != codec_type && FLV_VIDEO_CODEC_HEVE != codec_type) {
-        std::cout << "no support video codec,id:" << (int)codec_type << std::endl;
+        std::cout << "no support video codec,id:" << (int) codec_type << std::endl;
         return true;
     }
 
@@ -195,38 +184,37 @@ bool FlvParser::read_video_tag(TagHeader header, uint8_t *data, int len)
 
 
             int8_t lenght_size_minus_one = data[index];
-            index ++;
+            index++;
             lenght_size_minus_one &= 0x03;
             int nul_unit_length = lenght_size_minus_one;
-            if(nul_unit_length == 2) {
+            if (nul_unit_length == 2) {
                 std::cout << "hevc nal lengthSizeMinusOne should nerver be 2" << std::endl;
                 return true;
             }
             uint8_t num_of_arrays = data[index++];
-            for(int i = 0; i < num_of_arrays; i++) {
+            for (int i = 0; i < num_of_arrays; i++) {
                 uint8_t unit_type = data[index++];
                 uint64_t num_nalus = data[index] << 8 | data[index + 1];
                 index += 2;
-                if(num_nalus != 1)
-                {
+                if (num_nalus != 1) {
                     std::cout << "hevc only support 1 sps/pps/vps" << std::endl;
                     return true;
                 }
                 int16_t nal_unit_length = data[index] << 8 | data[index + 1];
                 index += 2;
                 //vps
-                if(32 == unit_type){
-                   std::cout << "vps" << std::endl;
-                }else if(33 == unit_type){
+                if (32 == unit_type) {
+                    std::cout << "vps" << std::endl;
+                } else if (33 == unit_type) {
                     std::cout << "sps" << std::endl;
-                }else if(34 == unit_type) {
+                } else if (34 == unit_type) {
                     std::cout << "pps" << std::endl;
-                }else{
+                } else {
                     std::cout << "not support unit type" << std::endl;
                     continue;
                 }
 
-                if(_out_video_file) {
+                if (_out_video_file) {
                     fwrite(H264_START_CODE, 1, H264_START_CODE_LENGTH, _out_video_file);
                     fwrite(data + index, 1, nal_unit_length, _out_video_file);
                 }
@@ -284,8 +272,7 @@ bool FlvParser::read_video_tag(TagHeader header, uint8_t *data, int len)
     return true;
 }
 
-bool FlvParser::read_audio_tag(TagHeader header, uint8_t *data, int len)
-{
+bool FlvParser::read_audio_tag(TagHeader header, uint8_t *data, int len) {
     uint8_t audio_codec_type = data[0] >> 4;
     uint8_t sample_type = data[0] & 0x0C;
     uint32_t audio_sample = 0;
@@ -309,7 +296,7 @@ bool FlvParser::read_audio_tag(TagHeader header, uint8_t *data, int len)
         if (data[1] == 0) {
             //AudioSpecificConfig 2字节定义如下：
             //AAC Profile 5bits | 采样率 4bits | 声道数 4bits | 其他 3bits |
-            _aac_spec_config.aac_profile = data[2] && 0xf8 >> 3  - 1;
+            _aac_spec_config.aac_profile = data[2] && 0xf8 >> 3 - 1;
             /*
              * 采样率 4bits
             Value samplingFrequencyIndex
